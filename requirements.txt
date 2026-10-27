@@ -3,3 +3,5 @@ langchain-core
 langchain-text-splitters
 langchain-ollama
 faiss-cpu
+pypdf
+langchain-google-genai

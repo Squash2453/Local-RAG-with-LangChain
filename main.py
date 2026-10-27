@@ -1,9 +1,7 @@
-import os
-
-from config import CHAT_MODEL
-from file_loader import select_file,load_and_chunk
+from config import MODEL_PROVIDER
+from file_loader import select_files, load_and_chunk
 from embedding import build_vectorstore
-from generator import build_chain,ask_with_memory
+from generator import build_chain, ask_with_memory
 
 
 def main():
@@ -11,21 +9,21 @@ def main():
     print("   SIMPLE RAG WITH LANGCHAIN (100% Local Backend)")
     print("=" * 60)
 
-    filepath = select_file()
-    if not filepath:
+    file_paths = select_files()
+    if not file_paths:
         return
 
-    print(f"\n[1] Loading and chunking: '{os.path.basename(filepath)}'...")
-    chunks = load_and_chunk(filepath)
+    print(f"\n[1] Loading and chunking {len(file_paths)} file(s)...")
+    chunks = load_and_chunk(file_paths)
     if not chunks:
-        print("File was empty or could not be read.")
+        print("No readable text was found in the selected files.")
         return
     print(f"    Created {len(chunks)} chunks.")
 
     print(f"\n[2] Building vector store...")
     vectorstore = build_vectorstore(chunks)
 
-    print(f"\n[3] Building RAG chain with '{CHAT_MODEL}'...")
+    print(f"\n[3] Building RAG chain with '{MODEL_PROVIDER}'...")
     chain = build_chain(vectorstore)
 
     print("\n" + "=" * 60)
@@ -44,7 +42,7 @@ def main():
             break
 
         print("  🔍 Retrieving relevant chunks...")
-        print(f"  🤖 Asking '{CHAT_MODEL}'...")
+        print(f"  🤖 Asking '{MODEL_PROVIDER}'...")
 
         answer = ask_with_memory(chain, question, history)
 
