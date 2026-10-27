@@ -1,51 +1,82 @@
-# Local RAG with LangChain
+# RAG System with LangChain, FAISS, Ollama & Gemini
 
-A beginner-friendly Retrieval-Augmented Generation (RAG) system built using **LangChain** and **Ollama**. This project allows users to load any text document, automatically split it into chunks, generate embeddings, store them in a FAISS vector database, retrieve the most relevant information, and answer questions using a local Large Language Model (LLM). It demonstrates how LangChain simplifies the implementation of a complete RAG pipeline while running entirely on your local machine.
+A document-based Retrieval-Augmented Generation (RAG) application built using **Python, LangChain, FAISS, and Ollama**, with support for Google Gemini API and local Gemma models.
 
----
+The application allows users to upload multiple documents, retrieve relevant information using semantic search, and generate answers grounded in the retrieved document content. It uses local Ollama embeddings and FAISS for retrieval, while allowing users to choose between a cloud-based Gemini model and a locally running Ollama model for answer generation.
 
 ## Features
 
-* Load any text document (`.txt`) using a graphical file picker.
-* Automatic document loading using LangChain's `TextLoader`.
-* Smart document chunking using `RecursiveCharacterTextSplitter`.
-* Generate embeddings locally using `nomic-embed-text` through Ollama.
-* Store embeddings in a FAISS vector store.
-* Retrieve relevant document chunks using LangChain's retriever.
-* Generate responses using the `gemma4:e4b` language model.
-* Support follow-up questions using conversation history.
-* 100% local execution with no cloud APIs.
+- **Multiple document support:** Load `.txt`, `.csv`, and `.pdf` files using a graphical file picker.
+- **Document processing:** Load documents and split them into smaller chunks using LangChain.
+- **Local embeddings:** Generate embeddings using `nomic-embed-text` through Ollama.
+- **Vector search:** Store and retrieve document embeddings using FAISS.
+- **Flexible LLM selection:** Switch between Google Gemini API and a local Ollama model.
+- **Conversation history:** Include recent questions and answers to support follow-up questions.
+- **Source metadata:** Include retrieved document filenames and, where available, PDF page numbers in the context sent to the model.
+- **Configurable retrieval:** Retrieve relevant document chunks to provide context for answer generation.
 
----
-
-## Project Structure
+## Project Architecture
 
 ```text
-Simple-Local-RAG-With-LangChain/
-│
-├── main.py             # Entry point of the application
-├── config.py           # Model names and application configuration
-├── file_loader.py      # File selection and document chunking
-├── embedding.py        # Embeddings and FAISS vector store
-├── generator.py        # RAG chain and response generation
-├── .gitignore
-├── README.md
-└── requirements.txt
+Documents (.txt, .csv, .pdf)
+             |
+             v
+      Document Loading
+             |
+             v
+      Text Chunking
+             |
+             v
+    Ollama Embeddings
+   (nomic-embed-text)
+             |
+             v
+       FAISS Index
+             |
+             v
+       User Question
+             |
+             v
+    FAISS Retriever
+             |
+             v
+   Retrieved Document Chunks
+             |
+             v
+  Context + Conversation History
+             |
+             v
+       LLM Selection
+          /     \
+         v       v
+     Gemini    Ollama
+         \       /
+          v     v
+       Generated Answer
 ```
-
----
 
 ## Technologies Used
 
-* Python 3
-* LangChain
-* Ollama
-* FAISS
-* Gemma 4 (`gemma4:e4b`)
-* nomic-embed-text
-* Tkinter
+- Python
+- LangChain
+- FAISS
+- Ollama
+- Google Gemini API
+- Gemma (`gemma4:e4b`)
+- `nomic-embed-text`
+- PyPDFLoader
+- TextLoader
+- RecursiveCharacterTextSplitter
+- Tkinter
 
----
+## Prerequisites
+
+Before running the project, make sure you have:
+
+- Python 3.10 or a compatible version supported by your dependencies.
+- [Ollama](https://ollama.com/) installed and running.
+- The required Ollama embedding model downloaded.
+- A Google Gemini API key if you want to use Gemini for answer generation.
 
 ## Installation
 
@@ -56,13 +87,13 @@ git clone https://github.com/Squash2453/Local-RAG-with-LangChain.git
 cd Local-RAG-with-LangChain
 ```
 
-### 2. (Optional) Create a virtual environment
+### 2. Create a virtual environment (recommended)
 
 **Windows**
 
-```bash
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 ```
 
 **Linux / macOS**
@@ -72,138 +103,124 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install the required packages
+### 3. Install dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-### 4. Install Ollama
+### 4. Install and configure Ollama
 
-Download and install Ollama from the official website.
+Download Ollama from [ollama.com](https://ollama.com/).
 
-### 5. Pull the required models
+Pull the embedding model:
 
 ```bash
-ollama pull gemma4:e4b
 ollama pull nomic-embed-text
 ```
 
-### 6. Start the Ollama server
+If you plan to use the local Gemma model for answer generation, also run:
 
 ```bash
-ollama serve
+ollama pull gemma4:e4b
 ```
 
-### 7. Run the application
+Ensure Ollama is running before starting the application.
+
+## Configuration
+
+The application supports two answer-generation options, configured through `config.py`.
+
+### Option 1: Google Gemini API
+
+Set the model provider in `config.py`:
+
+```python
+MODEL_PROVIDER = "gemini"
+```
+
+Configure your Gemini model and read the API key from an environment variable:
+
+```python
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_MODEL = "gemini-3.8-flash"
+```
+
+Set the API key in PowerShell for the current terminal session:
+
+```powershell
+$env:GOOGLE_API_KEY = "YOUR_GEMINI_API_KEY"
+```
+
+Replace the placeholder with your own API key. Never commit your real API key to GitHub.
+
+**Note:** Gemini is used for answer generation, but document embeddings are still generated locally through Ollama.
+
+### Option 2: Local Ollama model
+
+Set the model provider in `config.py`:
+
+```python
+MODEL_PROVIDER = "ollama"
+```
+
+Configure the local model and Ollama URL:
+
+```python
+OLLAMA_URL = "http://localhost:11434"
+OLLAMA_MODEL = "gemma4:e4b"
+```
+
+In this mode, Ollama generates the answers locally, while `nomic-embed-text` continues to generate document embeddings.
+
+## Running the Application
+
+Start the application from the project directory:
 
 ```bash
 python main.py
 ```
 
----
-
-## Usage
-
-1. Run the application.
-
-```bash
-python main.py
-```
-
-2. Select a text (`.txt`) document.
-
-3. The application will:
-
-* Load the document.
-* Split it into chunks.
-* Generate embeddings.
-* Store embeddings in a FAISS vector store.
-* Build the LangChain RAG pipeline.
-
-4. Ask questions about the document.
-
-5. Type `exit`, `quit`, or `q` to close the application.
-
----
+The application will allow you to select documents and ask questions based on their contents.
 
 ## How It Works
 
-The application follows a Retrieval-Augmented Generation (RAG) pipeline using LangChain:
+1. **Document loading:** The user selects one or more supported files using the graphical file picker.
+2. **Chunking:** LangChain splits the loaded documents into smaller, overlapping text chunks.
+3. **Embedding generation:** Ollama converts the chunks into numerical vector representations using `nomic-embed-text`.
+4. **Vector storage:** FAISS stores the embeddings and associated document information for similarity search.
+5. **Retrieval:** When the user asks a question, the retriever searches for relevant document chunks.
+6. **Context construction:** Retrieved text and available source metadata are added to the context supplied to the LLM.
+7. **Conversation history:** Recent question-and-answer pairs are included in the prompt to help the model interpret follow-up questions.
+8. **Answer generation:** The selected Gemini or Ollama model generates a response using the supplied context and conversation history.
 
-```text
-                Document (.txt)
-                       │
-                       ▼
-                 TextLoader
-                       │
-                       ▼
-     RecursiveCharacterTextSplitter
-                       │
-                       ▼
-           Ollama Embeddings
-                       │
-                       ▼
-             FAISS Vector Store
-                       │
-                       ▼
-                User Question
-                       │
-                       ▼
-                  Retriever
-                       │
-                       ▼
-              PromptTemplate
-                       │
-                       ▼
-              Gemma 4 (Ollama)
-                       │
-                       ▼
-                Generated Answer
-```
+## Conversation History
 
-### Workflow
+The current implementation maintains recent conversation history in a Python list and includes up to the last five question-and-answer pairs in subsequent prompts.
 
-1. The selected document is loaded using LangChain's `TextLoader`.
-2. The document is split into overlapping chunks using `RecursiveCharacterTextSplitter`.
-3. Each chunk is converted into an embedding using `OllamaEmbeddings`.
-4. All embeddings are stored inside a FAISS vector database.
-5. When a question is asked, the retriever finds the most relevant document chunks.
-6. The retrieved context is inserted into a prompt template.
-7. The prompt is sent to the local `gemma4:e4b` language model through Ollama.
-8. The generated answer is returned to the user.
+This supports basic conversational follow-ups, but the history is not automatically persisted across application restarts. Additionally, document retrieval currently uses the latest question directly, so ambiguous follow-up questions may not always retrieve the most relevant chunks.
 
----
+## Local vs. Cloud-Based Answer Generation
 
-## Comparison with the Manual RAG Implementation
+| Component | Gemini mode | Ollama mode |
+|---|---|---|
+| Embedding generation | Local Ollama | Local Ollama |
+| Vector storage and retrieval | Local FAISS | Local FAISS |
+| Answer generation | Google Gemini API | Local Gemma model |
+| Internet required for answer generation | Yes | Not for local model inference |
+| API key required | Yes | No Gemini API key required |
 
-This project implements the same RAG pipeline as the manual version but replaces custom implementations with LangChain components.
-
-| Manual RAG                | LangChain Version              |
-| ------------------------- | ------------------------------ |
-| Manual file loading       | TextLoader                     |
-| Manual chunking           | RecursiveCharacterTextSplitter |
-| Manual embeddings         | OllamaEmbeddings               |
-| Manual cosine similarity  | FAISS Retriever                |
-| Manual prompt handling    | PromptTemplate                 |
-| Manual retrieval pipeline | LangChain RAG Chain            |
-
-This demonstrates how LangChain abstracts much of the repetitive RAG implementation while preserving the same overall workflow.
-
----
+Both modes use the same underlying document retrieval pipeline.
 
 ## Future Improvements
 
-* Support PDF and DOCX documents.
-* Persist the FAISS vector database to disk.
-* Stream LLM responses.
-* Add a Streamlit or Flask web interface.
-* Support multiple documents in a single knowledge base.
-* Use LangChain Memory instead of manual conversation history.
-* Add source citations for retrieved document chunks.
-
----
+- Add history-aware query rewriting for improved follow-up retrieval.
+- Persist the FAISS index between application runs.
+- Add persistent conversation history using a suitable LangGraph checkpointer.
+- Improve source attribution and display citations alongside generated answers.
+- Add a web interface using Streamlit or Flask.
+- Add automated tests and error handling for document loading and model calls.
 
 ## Acknowledgements
 
-This project was built as a learning exercise to understand how LangChain simplifies the implementation of Retrieval-Augmented Generation (RAG) while using local Large Language Models through Ollama.
+This project was developed as a learning exercise to understand Retrieval-Augmented Generation, semantic search, vector stores, embeddings, conversation history, and the integration of local and cloud-based language models using LangChain.
